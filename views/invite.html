@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Document</title>
+    </head>
+    <body>
+        <form id="form" action="">
+            <input type="text" name="" id="invite-code" />
+            <input id="copy-invite-code" type="button" value="Copy Text" />
+            <input type="submit" value="Join Room" />
+        </form>
+        <h1>Current room: <span id="current"></span></h1>
+        <button id="generate">Generate a new room</button>
+        <button id="run-code">Run code</button>
+        <button id="submit-code">Submit code</button>
+        <script src="/socket.io/socket.io.js"></script>
+        <script>
+            var socket = io("/invite");
+
+            const generate = document.getElementById("generate");
+            const form = document.getElementById("form");
+            const copyInviteCode = document.getElementById("copy-invite-code");
+            const inviteCode = document.getElementById("invite-code");
+            const current = document.getElementById("current");
+            const runCode = document.getElementById("run-code");
+            const submitCode = document.getElementById("submit-code");
+            let room;
+
+            const saveRoomCode = (code) => {
+                sessionStorage.setItem("inviteCode", code);
+                room = sessionStorage.getItem("inviteCode");
+            };
+
+            const tempAlert = (msg, duration) => {
+                var el = document.createElement("div");
+                el.setAttribute(
+                    "style",
+                    "position:absolute;left:40%;top:1%;background-color:lightgreen;border-radius:2em;padding:1em"
+                );
+                el.innerHTML = msg;
+                setTimeout(function () {
+                    el.parentNode.removeChild(el);
+                }, duration);
+                document.body.appendChild(el);
+            };
+
+            copyInviteCode.addEventListener("click", () => {
+                inviteCode.select();
+                inviteCode.setSelectionRange(0, 99999); // For mobile devices
+                navigator.clipboard.writeText(inviteCode.value);
+            });
+
+            generate.addEventListener("click", () => {
+                socket.emit("create");
+            });
+
+            runCode.addEventListener("click", () => {
+                socket.emit("run code", room);
+            });
+
+            submitCode.addEventListener("click", () => {
+                socket.emit("submit code", room);
+            });
+
+            form.addEventListener("submit", function (e) {
+                e.preventDefault();
+                if (inviteCode.value) {
+                    socket.emit("join", inviteCode.value);
+                }
+            });
+
+            socket.on("room joined", (code) => {
+                saveRoomCode(code);
+                current.innerHTML = inviteCode.value = code;
+            });
+
+            socket.on("alert", (msg) => {
+                console.log(msg);
+                tempAlert(msg, 3000);
+            });
+        </script>
+    </body>
+</html>
