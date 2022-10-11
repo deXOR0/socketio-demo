@@ -34,6 +34,8 @@ const joinRoom = (io, socket, inviteCode) => {
 const invite = io.of("/invite");
 
 invite.on("connection", (socket) => {
+    console.log("Connected to /invite");
+
     socket.on("create", () => {
         const inviteCode = nanoId(5).toLowerCase();
         console.log(inviteCode);
