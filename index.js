@@ -2,6 +2,7 @@ const app = require("express")();
 const http = require("http").Server(app);
 const io = require("socket.io")(http);
 const nanoId = require("nano-id");
+const exec = require("child_process").execSync;
 const port = process.env.PORT || 3000;
 const views = __dirname + "/views";
 
@@ -28,7 +29,19 @@ io.on("connection", (socket) => {
 const joinRoom = (io, socket, inviteCode) => {
     socket.join(inviteCode);
     socket.emit("room joined", inviteCode);
-    io.to(inviteCode).emit("alert", socket.id + " joined the room");
+    io.to(inviteCode).emit(
+        "alert",
+        "A new user joined your room",
+        socket.id + " joined the room"
+    );
+};
+
+const runCode = (coding) => {
+    try {
+        return exec(`python -c '${coding}'`, { encoding: "utf-8" });
+    } catch (err) {
+        return err.stderr;
+    }
 };
 
 const invite = io.of("/invite");
@@ -47,12 +60,28 @@ invite.on("connection", (socket) => {
         joinRoom(invite, socket, inviteCode);
     });
 
-    socket.on("run code", (room) => {
-        socket.to(room).emit("alert", socket.id + " ran their code!");
+    socket.on("run code", (room, coding) => {
+        socket
+            .to(room)
+            .emit(
+                "alert",
+                "Your opponent ran their code",
+                socket.id + " ran their code!"
+            );
+        const output = runCode(coding);
+        socket.emit("alert", "Output", output);
     });
 
-    socket.on("submit code", (room) => {
-        socket.to(room).emit("alert", socket.id + " has submitted their code!");
+    socket.on("submit code", (room, coding) => {
+        socket
+            .to(room)
+            .emit(
+                "alert",
+                "Your opponent submitted their code",
+                socket.id + " has submitted their code!"
+            );
+        const output = runCode(coding);
+        socket.emit("alert", "Output", output);
     });
 });
 
