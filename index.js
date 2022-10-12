@@ -2,7 +2,7 @@ const app = require("express")();
 const http = require("http").Server(app);
 const io = require("socket.io")(http);
 const nanoId = require("nano-id");
-const exec = require("child_process").execSync;
+const exec = require("child_process").exec;
 const port = process.env.PORT || 3000;
 const views = __dirname + "/views";
 
@@ -36,12 +36,34 @@ const joinRoom = (io, socket, inviteCode) => {
     );
 };
 
-const runCode = (coding) => {
-    try {
-        return exec(`python -c '${coding}'`, { encoding: "utf-8" });
-    } catch (err) {
-        return err.stderr;
+const parseCode = async (coding, input) => {
+    const inputArray = input.split("\n");
+    coding = `import sys;inputs = sys.argv[1:]\n${coding}`;
+    for (let i = 0; i < inputArray.length; i++) {
+        coding = coding.replace("input()", `inputs[${i}]`);
     }
+    const inputArgs = inputArray.join(" ");
+    console.log(coding);
+    console.log(inputArgs);
+    return { coding, inputArgs };
+};
+
+const runCode = async (coding, input) => {
+    return new Promise(function (resolve, reject) {
+        const inputArray = input.split("\n");
+        coding = `import sys;inputs = sys.argv[1:]\n${coding}`;
+        for (let i = 0; i < inputArray.length; i++) {
+            coding = coding.replace("input()", `inputs[${i}]`);
+        }
+        const inputArgs = inputArray.join(" ");
+        exec(`python -c '${coding}' ${inputArgs}`, (err, stdout, stderr) => {
+            if (err) {
+                reject(err);
+            } else {
+                resolve(stdout);
+            }
+        });
+    });
 };
 
 const invite = io.of("/invite");
@@ -60,7 +82,7 @@ invite.on("connection", (socket) => {
         joinRoom(invite, socket, inviteCode);
     });
 
-    socket.on("run code", (room, coding) => {
+    socket.on("run code", async (room, coding, input) => {
         socket
             .to(room)
             .emit(
@@ -68,11 +90,13 @@ invite.on("connection", (socket) => {
                 "Your opponent ran their code",
                 socket.id + " ran their code!"
             );
-        const output = runCode(coding);
-        socket.emit("alert", "Output", output);
+        const output = await runCode(coding, input).catch((err) => {
+            return String(err);
+        });
+        socket.emit("output", output);
     });
 
-    socket.on("submit code", (room, coding) => {
+    socket.on("submit code", async (room, coding, input) => {
         socket
             .to(room)
             .emit(
@@ -80,8 +104,11 @@ invite.on("connection", (socket) => {
                 "Your opponent submitted their code",
                 socket.id + " has submitted their code!"
             );
-        const output = runCode(coding);
-        socket.emit("alert", "Output", output);
+        const output = await runCode(coding, input).catch((err) => {
+            console.log(err);
+            return err.error;
+        });
+        socket.emit("output", output);
     });
 });
 
