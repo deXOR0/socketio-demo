@@ -36,24 +36,22 @@ const joinRoom = (io, socket, inviteCode) => {
     );
 };
 
-const parseCode = async (coding, input) => {
-    const inputArray = input.split("\n");
-    coding = `import sys;inputs = sys.argv[1:]\n${coding}`;
-    for (let i = 0; i < inputArray.length; i++) {
-        coding = coding.replace("input()", `inputs[${i}]`);
-    }
-    const inputArgs = inputArray.join(" ");
-    console.log(coding);
-    console.log(inputArgs);
-    return { coding, inputArgs };
-};
-
 const runCode = async (coding, input) => {
     return new Promise(function (resolve, reject) {
-        const inputArray = input.split("\n");
+        let inputArray = input.split("\n");
+        if (inputArray.length === 1 && inputArray[0] === "") {
+            reject(
+                "The number of input given is less than what the code requires"
+            );
+        }
         coding = `import sys;inputs = sys.argv[1:]\n${coding}`;
         for (let i = 0; i < inputArray.length; i++) {
             coding = coding.replace("input()", `inputs[${i}]`);
+        }
+        if (coding.includes("input()")) {
+            reject(
+                "The number of input given is less than what the code requires"
+            );
         }
         const inputArgs = inputArray.join(" ");
         exec(`python -c '${coding}' ${inputArgs}`, (err, stdout, stderr) => {
@@ -106,7 +104,7 @@ invite.on("connection", (socket) => {
             );
         const output = await runCode(coding, input).catch((err) => {
             console.log(err);
-            return err.error;
+            return String(err);
         });
         socket.emit("output", output);
     });
