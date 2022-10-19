@@ -1,21 +1,31 @@
-const app = require("express")();
-const http = require("http").Server(app);
-const io = require("socket.io")(http);
-const nanoId = require("nano-id");
-const exec = require("child_process").exec;
+import express from "express";
+import { Server } from "http";
+import { Server as socketIO } from "socket.io";
+import nanoId from "nano-id";
+import { exec } from "child_process";
+import { auth0Middleware } from "auth0-socketio";
+
+const app = express();
+const http = Server(app);
+const io = new socketIO(http);
 const port = process.env.PORT || 3000;
-const views = __dirname + "/views";
+const views = "./views";
+
+const withAuthorization = auth0Middleware(
+    "awesa.au.auth0.com",
+    "http://localhost:3000/invite"
+);
 
 app.get("/", (req, res) => {
-    res.sendFile(views + "/index.html");
+    res.sendFile("index.html", { root: views });
 });
 
-app.get("/test", (req, res) => {
-    res.sendFile(views + "/test.html");
+app.get("/test", checkJwt, (req, res) => {
+    res.sendFile("test.html", { root: views });
 });
 
 app.get("/invite", (req, res) => {
-    res.sendFile(views + "/invite.html");
+    res.sendFile("invite.html", { root: views });
 });
 
 io.on("connection", (socket) => {
@@ -38,8 +48,12 @@ const joinRoom = (io, socket, inviteCode) => {
 
 const runCode = async (coding, input) => {
     return new Promise(function (resolve, reject) {
-        let inputArray = input.split("\n");
-        if (inputArray.length === 1 && inputArray[0] === "") {
+        let inputArray = input.trim().split("\n");
+        if (
+            coding.includes("input()") &&
+            inputArray.length === 1 &&
+            inputArray[0] === ""
+        ) {
             reject(
                 "The number of input given is less than what the code requires"
             );
@@ -66,8 +80,11 @@ const runCode = async (coding, input) => {
 
 const invite = io.of("/invite");
 
+invite.use(withAuthorization);
+
 invite.on("connection", (socket) => {
     console.log("Connected to /invite");
+    console.log(socket.decodedToken);
 
     socket.on("create", () => {
         const inviteCode = nanoId(5).toLowerCase();

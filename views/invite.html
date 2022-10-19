@@ -18,7 +18,11 @@
         <button id="submit-code">Submit code</button>
         <script src="/socket.io/socket.io.js"></script>
         <script>
-            var socket = io("/invite");
+            var socket = io("/invite", {
+                auth: {
+                    token: "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6Il9sUUVtamdzZzZJdm54dU03TEtvciJ9.eyJodHRwczovL215LWFwcC5leGFtcGxlLmNvbS9lbWFpbCI6ImF3ZXNhYXR5YW50YS5wQGdtYWlsLmNvbSIsImlzcyI6Imh0dHBzOi8vYXdlc2EuYXUuYXV0aDAuY29tLyIsInN1YiI6Imdvb2dsZS1vYXV0aDJ8MTA0NjY5OTM1ODc2NDQ1NjUxMzc0IiwiYXVkIjpbImh0dHA6Ly9sb2NhbGhvc3Q6MzAwMC9pbnZpdGUiLCJodHRwczovL2F3ZXNhLmF1LmF1dGgwLmNvbS91c2VyaW5mbyJdLCJpYXQiOjE2NjYxNTYxOTAsImV4cCI6MTY2NjI0MjU5MCwiYXpwIjoiYk52bUtkOGRWdktMY0t2TDdxUDR4dnl5N3Axa3B2Q2siLCJzY29wZSI6Im9wZW5pZCBwcm9maWxlIGVtYWlsIn0.WJfUxWANqugmw9e7Mtn0qGk20npyZz67v_Khh9wdxaqMAXMIZqExMvvfCxGhBwSfgk5S4MW1ViMP92tDKhktvlXJ7DGZpx7hgi8vsYFJlBYD-sJpyLUcJh0_YwMn1iYkFA_d2QDZPqKlQRvoK8Fyo3T-YTl8sVBUF92dD7YdXGCLhhk0rz-LqUWvw5ufhcGIWLgdZMKbsRaDNwmmWppYhIFGLZaZZCdfA_oThd6lBxKeiY_A144Vd8CUWmZFoPrVAq95ijxrbYbLJINrzqVYF9GqCSLhrp6vZE6a-lVThO_Sy7Djirj51rln-lgsPgoa0ksBcDFDcnmfbHHWvfr96A",
+                },
+            });
 
             const generate = document.getElementById("generate");
             const form = document.getElementById("form");
