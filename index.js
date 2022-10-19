@@ -20,7 +20,7 @@ app.get("/", (req, res) => {
     res.sendFile("index.html", { root: views });
 });
 
-app.get("/test", checkJwt, (req, res) => {
+app.get("/test", (req, res) => {
     res.sendFile("test.html", { root: views });
 });
 
